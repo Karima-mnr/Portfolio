@@ -1142,7 +1142,7 @@ export default function Home() {
       </footer>
 
       <AnimatePresence>
-        {selectedProject && <ProjectModal project={selectedProject} onClose={() => setSelectedProject(null)} currentImageIndex={currentImageIndex} setCurrentImageIndex={setCurrentImageIndex} onZoom={(img) => setZoomedImage(img)} theme={theme} t={t} language={language} />}
+        {selectedProject && <ProjectModal project={selectedProject} onClose={() => setSelectedProject(null)} currentImageIndex={currentImageIndex} setCurrentImageIndex={setCurrentImageIndex} onZoom={(img: string) => setZoomedImage(img)} theme={theme} t={t} language={language} />}
       </AnimatePresence>
       <AnimatePresence>
         {zoomedImage && <ZoomModal image={zoomedImage} onClose={() => setZoomedImage(null)} theme={theme} />}
