@@ -763,22 +763,22 @@ export default function Home() {
   initial={{ y: -100, opacity: 0 }}
   animate={{ y: 0, opacity: 1 }}
   transition={{ duration: 0.5 }}
-  className={`fixed top-6 left-1/2 transform -translate-x-1/2 w-[calc(100%-2rem)] max-w-[1200px] z-50 px-6 md:px-10 py-3 backdrop-blur-xl border shadow-lg rounded-2xl ${
+  className={`fixed top-6 left-1/2 transform -translate-x-1/2 w-[calc(100%-2rem)] max-w-[1200px] z-50 px-4 md:px-6 py-3 backdrop-blur-xl border shadow-lg rounded-2xl ${
     theme === "light" 
-      ? "bg-white/10 border-gray-200" 
-      : "bg-black/10 border-white/10"
+      ? "bg-white/90 border-gray-200" 
+      : "bg-black/60 border-white/10"
   }`}
 >
-  <div className="flex items-center justify-between">
+  <div className="flex items-center justify-between gap-2">
     <motion.span 
       whileHover={{ scale: 1.05 }}
-      className={`text-2xl font-bold bg-gradient-to-r ${theme === "light" ? "from-[#62517B] to-[#8B7BA8]" : "from-[#ECFAD0] to-[#b8d490]"} bg-clip-text text-transparent`}
+      className={`text-xl md:text-2xl font-bold bg-gradient-to-r ${theme === "light" ? "from-[#62517B] to-[#8B7BA8]" : "from-[#ECFAD0] to-[#b8d490]"} bg-clip-text text-transparent`}
     >
       KM.
     </motion.span>
     
     {/* Desktop Navigation */}
-    <div className="hidden md:flex gap-8">
+    <div className="hidden md:flex gap-6 lg:gap-8">
       {t.nav.map((item, idx) => (
         <motion.a
           key={item}
@@ -794,23 +794,12 @@ export default function Home() {
       ))}
     </div>
 
-    {/* Mobile Menu Button */}
-    <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
-      className={`md:hidden p-2 rounded-xl backdrop-blur-lg border transition-all duration-300 ${
-        theme === "light" 
-          ? "bg-gray-100/80 border-gray-200 text-gray-700" 
-          : "bg-white/10 border-white/20 text-gray-300"
-      }`}
-    >
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        {mobileMenuOpen ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /> : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />}
-      </svg>
-    </button>
-
-    <div className="hidden md:flex items-center gap-3">
+    {/* Right side controls - Always visible on mobile and desktop */}
+    <div className="flex items-center gap-2">
       {/* Language Selector */}
       <div className="relative">
-        <button onClick={() => setShowLangMenu(!showLangMenu)} 
+        <button 
+          onClick={() => setShowLangMenu(!showLangMenu)} 
           className={`p-2 rounded-xl backdrop-blur-lg border transition-all duration-300 hover:scale-105 ${
             theme === "light" 
               ? "bg-gray-100/80 border-gray-200 text-gray-700" 
@@ -825,19 +814,22 @@ export default function Home() {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className={`absolute top-full mt-2 right-0 rounded-xl shadow-2xl overflow-hidden z-50 border backdrop-blur-xl ${
+              className={`absolute top-full mt-2 right-0 rounded-xl shadow-2xl overflow-hidden z-50 border backdrop-blur-xl min-w-[120px] ${
                 theme === "light" 
                   ? "bg-white/95 border-gray-200" 
                   : "bg-gray-900/95 border-gray-700"
               }`}
             >
               {["en", "ar", "fr"].map((lang) => (
-                <button key={lang} onClick={() => { setLanguage(lang as Language); setShowLangMenu(false); }}
+                <button 
+                  key={lang} 
+                  onClick={() => { setLanguage(lang as Language); setShowLangMenu(false); }}
                   className={`block w-full px-4 py-2 text-sm text-left transition-all duration-300 ${
                     language === lang 
                       ? (theme === "light" ? "bg-[#62517B] text-white" : "bg-[#ECFAD0] text-gray-900")
                       : (theme === "light" ? "text-gray-700 hover:bg-gray-100" : "text-gray-300 hover:bg-gray-800")
-                  }`}>
+                  }`}
+                >
                   {lang === "en" ? "English" : lang === "ar" ? "العربية" : "Français"}
                 </button>
               ))}
@@ -847,7 +839,8 @@ export default function Home() {
       </div>
       
       {/* Theme Toggle */}
-      <button onClick={toggleTheme} 
+      <button 
+        onClick={toggleTheme} 
         className={`p-2 rounded-xl backdrop-blur-lg border transition-all duration-300 hover:scale-105 ${
           theme === "light" 
             ? "bg-gray-100/80 border-gray-200 text-gray-700" 
@@ -856,12 +849,12 @@ export default function Home() {
       >
         {theme === "dark" ? <Icons.Sun /> : <Icons.Moon />}
       </button>
-      
-      {/* Contact Button */}
+
+      {/* Contact Button - Hidden on mobile (shown in mobile menu) */}
       <motion.a
         whileHover={{ scale: 1.05 }}
         href="#contact" 
-        className={`px-5 py-2 rounded-xl text-sm font-medium transition-all shadow-lg ${
+        className={`hidden md:block px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg ${
           theme === "light" 
             ? "bg-gradient-to-r from-[#62517B] to-[#8B7BA8] text-white" 
             : "bg-gradient-to-r from-[#ECFAD0] to-[#b8d490] text-gray-900"
@@ -869,10 +862,28 @@ export default function Home() {
       >
         {t.contactBtn}
       </motion.a>
+      
+      {/* Mobile Menu Button */}
+      <button 
+        onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+        className={`md:hidden p-2 rounded-xl backdrop-blur-lg border transition-all duration-300 ${
+          theme === "light" 
+            ? "bg-gray-100/80 border-gray-200 text-gray-700" 
+            : "bg-white/10 border-white/20 text-gray-300"
+        }`}
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          {mobileMenuOpen ? (
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          ) : (
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          )}
+        </svg>
+      </button>
     </div>
   </div>
 
-  {/* Mobile Menu */}
+  {/* Mobile Menu - Only contains navigation links and contact button */}
   <AnimatePresence>
     {mobileMenuOpen && (
       <motion.div
@@ -885,39 +896,29 @@ export default function Home() {
       >
         <div className="flex flex-col gap-3">
           {t.nav.map((item) => (
-            <a key={item} href={`#${item.toLowerCase() === "home" ? "home" : item.toLowerCase() === "skills" ? "skills" : item.toLowerCase() === "achievements" ? "achievements" : item.toLowerCase() === "projects" ? "projects" : "contact"}`} 
+            <a 
+              key={item} 
+              href={`#${item.toLowerCase() === "home" ? "home" : item.toLowerCase() === "skills" ? "skills" : item.toLowerCase() === "achievements" ? "achievements" : item.toLowerCase() === "projects" ? "projects" : "contact"}`} 
               onClick={() => setMobileMenuOpen(false)}
-              className={`text-sm font-medium py-2 transition-colors ${
-                theme === "light" ? "text-gray-700 hover:text-[#62517B]" : "text-gray-300 hover:text-[#ECFAD0]"
-              }`}>
+              className={`text-sm font-medium py-2 px-2 rounded-lg transition-colors ${
+                theme === "light" ? "text-gray-700 hover:text-[#62517B] hover:bg-gray-100" : "text-gray-300 hover:text-[#ECFAD0] hover:bg-gray-800"
+              }`}
+            >
               {item}
             </a>
           ))}
-          <div className="flex items-center gap-3 pt-2">
-            <button onClick={() => setShowLangMenu(!showLangMenu)} 
-              className={`p-2 rounded-xl backdrop-blur-lg border transition-all duration-300 ${
-                theme === "light" 
-                  ? "bg-gray-100/80 border-gray-200 text-gray-700" 
-                  : "bg-white/10 border-white/20 text-gray-300"
-              }`}
-            >
-              <Icons.Globe />
-            </button>
-            <button onClick={toggleTheme} 
-              className={`p-2 rounded-xl backdrop-blur-lg border transition-all duration-300 ${
-                theme === "light" 
-                  ? "bg-gray-100/80 border-gray-200 text-gray-700" 
-                  : "bg-white/10 border-white/20 text-gray-300"
-              }`}
-            >
-              {theme === "dark" ? <Icons.Sun /> : <Icons.Moon />}
-            </button>
-            <a href="#contact" className={`px-5 py-2 rounded-xl text-sm font-medium ${
-              theme === "light" ? "bg-[#62517B] text-white" : "bg-[#ECFAD0] text-gray-900"
-            }`}>
-              {t.contactBtn}
-            </a>
-          </div>
+          {/* Contact button in mobile menu */}
+          <a 
+            href="#contact" 
+            onClick={() => setMobileMenuOpen(false)}
+            className={`mt-2 px-4 py-2 rounded-xl text-sm font-medium text-center transition-all ${
+              theme === "light" 
+                ? "bg-gradient-to-r from-[#62517B] to-[#8B7BA8] text-white" 
+                : "bg-gradient-to-r from-[#ECFAD0] to-[#b8d490] text-gray-900"
+            }`}
+          >
+            {t.contactBtn}
+          </a>
         </div>
       </motion.div>
     )}
