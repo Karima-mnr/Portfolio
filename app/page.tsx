@@ -1201,6 +1201,7 @@ function ProjectCard({ project, index, onClick, theme, t, language }: any) {
 }
 
 // Project Modal
+// Project Modal
 function ProjectModal({ project, onClose, currentImageIndex, setCurrentImageIndex, onZoom, theme, t, language }: any) {
   const next = () => setCurrentImageIndex((p: number) => (p + 1) % project.screenshots.length);
   const prev = () => setCurrentImageIndex((p: number) => (p - 1 + project.screenshots.length) % project.screenshots.length);
@@ -1228,13 +1229,14 @@ function ProjectModal({ project, onClose, currentImageIndex, setCurrentImageInde
 }
 
 // Zoom Modal
-function ZoomModal({ image, onClose, theme }: any) {
+function ZoomModal({ image, onClose, theme }: { image: string; onClose: () => void; theme: "light" | "dark" }) {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-black/98 flex items-center justify-center p-4 cursor-zoom-out" onClick={onClose}>
       <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }} className="relative max-w-[90vw] max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
         <img src={image} alt="Zoomed" className="max-w-[90vw] max-h-[90vh] object-contain rounded-2xl" />
-        <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/50 text-white hover:bg-opacity-80"><Icons.X /></button>
+        <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/50 text-white hover:bg-black/70 transition-all"><Icons.X /></button>
       </motion.div>
     </motion.div>
   );
 }
+
