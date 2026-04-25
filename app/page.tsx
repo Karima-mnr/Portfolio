@@ -765,8 +765,8 @@ export default function Home() {
   transition={{ duration: 0.5 }}
   className={`fixed top-6 left-1/2 transform -translate-x-1/2 w-[calc(100%-2rem)] max-w-[1200px] z-50 px-4 md:px-6 py-3 backdrop-blur-xl border shadow-lg rounded-2xl ${
     theme === "light" 
-      ? "bg-white/90 border-gray-200" 
-      : "bg-black/60 border-white/10"
+      ? "bg-white/30 border-gray-200" 
+      : "bg-black/30 border-white/10"
   }`}
 >
   <div className="flex items-center justify-between gap-2">
