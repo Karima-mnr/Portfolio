@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 
 // Language translations
 type Language = "en" | "ar" | "fr";
@@ -626,6 +627,201 @@ const ALL_SKILLS = [
   "MySQL", "Supabase", "Figma", "Git", "Docker", "REST API", "GraphQL"
 ];
 
+// Optimized Image Component with Blur Placeholder
+const OptimizedImage = ({ 
+  src, 
+  alt, 
+  className = "", 
+  priority = false,
+  quality = 75,
+  sizes = "100vw",
+  fill = false,
+  width,
+  height,
+  onLoad,
+  objectFit = "cover"
+}: any) => {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+
+  const handleLoad = () => {
+    setLoaded(true);
+    if (onLoad) onLoad();
+  };
+
+  if (error) {
+    return (
+      <div className={`bg-gray-800 flex items-center justify-center ${className}`}>
+        <span className="text-gray-400 text-sm">Failed to load image</span>
+      </div>
+    );
+  }
+
+  if (fill) {
+    return (
+      <div className="relative w-full h-full overflow-hidden">
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          sizes={sizes}
+          className={`${className} transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+          priority={priority}
+          quality={quality}
+          onLoad={handleLoad}
+          onError={() => setError(true)}
+          placeholder="blur"
+          blurDataURL="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3Crect width='1' height='1' fill='%23222'/%3E%3C/svg%3E"
+        />
+        {!loaded && (
+          <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative overflow-hidden">
+      <Image
+        src={src}
+        alt={alt}
+        width={width}
+        height={height}
+        sizes={sizes}
+        className={`${className} transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+        priority={priority}
+        quality={quality}
+        onLoad={handleLoad}
+        onError={() => setError(true)}
+        placeholder="blur"
+        blurDataURL="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3Crect width='1' height='1' fill='%23222'/%3E%3C/svg%3E"
+      />
+      {!loaded && (
+        <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+      )}
+    </div>
+  );
+};
+
+// Project Card Component - Optimized
+function ProjectCard({ project, index, onClick, theme, t, language }: any) {
+  const [hovered, setHovered] = useState(false);
+  const [rotateX, setRotateX] = useState(0);
+  const [rotateY, setRotateY] = useState(0);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const handleMove = (e: React.MouseEvent) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    setRotateX(((y - rect.height / 2) / (rect.height / 2)) * -8);
+    setRotateY(((x - rect.width / 2) / (rect.width / 2)) * 8);
+  };
+
+  return (
+    <div className="animate-fade-up" style={{ animationDelay: `${index * 0.05}s` }}>
+      <div
+        ref={cardRef}
+        onMouseMove={handleMove}
+        onMouseLeave={() => { setRotateX(0); setRotateY(0); setHovered(false); }}
+        onMouseEnter={() => setHovered(true)}
+        onClick={onClick}
+        className="relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 border shadow-xl"
+        style={{ 
+          transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(${hovered ? -6 : 0}px)`,
+          background: theme === "light" ? "#2D2440" : "#1a1a2e",
+          borderColor: theme === "light" ? "#4a3a6b" : "#2a2a4e",
+        }}
+      >
+        <div className="relative aspect-video overflow-hidden bg-gray-800">
+          <OptimizedImage
+            src={project.thumbnail}
+            alt={project.title[language]}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className={`object-cover transition-transform duration-700 ${
+              hovered ? "scale-108" : "scale-100"
+            }`}
+            priority={index < 3}
+            quality={75}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 transition-opacity duration-300" style={{ opacity: hovered ? 1 : 0 }} />
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300" style={{ opacity: hovered ? 1 : 0, background: "rgba(0,0,0,0.6)" }}>
+            <span className={`px-4 py-2 rounded-xl text-sm font-semibold ${theme === "light" ? "bg-[#62517B] text-white" : "bg-[#ECFAD0] text-gray-900"}`}>{t.viewProject}</span>
+          </div>
+        </div>
+        <div className="p-4">
+          <h3 className={`font-bold text-base mb-1 line-clamp-1 text-white`}>{project.title[language]}</h3>
+          <p className={`text-xs line-clamp-2 text-gray-300`}>{project.description[language]}</p>
+          <div className="flex flex-wrap gap-1.5 mt-3">{project.techStack.slice(0, 3).map((tech: string) => (<span key={tech} className={`px-2 py-0.5 rounded-full text-[9px] font-medium border border-[#ECFAD0]/30 bg-[#ECFAD0]/10 text-[#ECFAD0]`}>{tech}</span>))}</div>
+        </div>
+        <div className={`absolute top-3 right-3 px-2 py-1 rounded-xl text-[10px] glass-card text-white ${language === "ar" ? "left-3 right-auto" : ""}`}>{project.screenshots.length} {t.shots}</div>
+      </div>
+    </div>
+  );
+}
+
+// Project Modal - Optimized
+function ProjectModal({ project, onClose, currentImageIndex, setCurrentImageIndex, onZoom, theme, t, language }: any) {
+  const next = () => setCurrentImageIndex((p: number) => (p + 1) % project.screenshots.length);
+  const prev = () => setCurrentImageIndex((p: number) => (p - 1 + project.screenshots.length) % project.screenshots.length);
+  
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-md" onClick={onClose}>
+      <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} className={`relative max-w-5xl w-full max-h-[90vh] overflow-y-auto rounded-2xl border ${theme === "light" ? "bg-white border-gray-200" : "bg-gray-900 border-gray-800"}`} onClick={(e) => e.stopPropagation()}>
+        <button onClick={onClose} className={`absolute top-4 right-4 z-10 w-8 h-8 rounded-xl transition-colors ${theme === "light" ? "bg-gray-100 text-gray-600 hover:text-[#62517B]" : "bg-gray-800 text-gray-400 hover:text-[#ECFAD0]"}`}><Icons.X /></button>
+        <div className={`p-6 border-b ${theme === "light" ? "border-gray-200" : "border-gray-800"}`}>
+          <h2 className={`text-2xl font-bold ${theme === "light" ? "text-[#62517B]" : "text-[#ECFAD0]"}`}>{project.title[language]}</h2>
+          <p className={`mt-2 text-sm leading-relaxed ${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>{project.fullDescription[language]}</p>
+          {project.myRole && (<div className={`mt-4 p-3 rounded-xl border ${theme === "light" ? "bg-[#62517B]/5 border-[#62517B]/10" : "bg-[#ECFAD0]/5 border-[#ECFAD0]/10"}`}><p className={`text-xs font-semibold mb-1 ${theme === "light" ? "text-[#62517B]" : "text-[#ECFAD0]"}`}>{t.myRole}</p><p className={`text-sm ${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>{project.myRole[language]}</p></div>)}
+          <div className="flex flex-wrap gap-2 mt-4">{project.techStack.map((tech: string) => (<span key={tech} className={`px-3 py-1 rounded-full text-xs border ${theme === "light" ? "bg-[#62517B]/10 border-[#62517B]/20 text-[#62517B]" : "bg-[#ECFAD0]/10 border-[#ECFAD0]/20 text-[#ECFAD0]"}`}>{tech}</span>))}</div>
+          {project.githubUrl && (<a href={project.githubUrl} target="_blank" className={`inline-flex items-center gap-2 mt-4 text-sm ${theme === "light" ? "text-[#62517B] hover:underline" : "text-[#ECFAD0] hover:underline"}`}><Icons.Github /> GitHub</a>)}
+        </div>
+        <div className="p-6">
+          <div className="relative aspect-video bg-black/50 rounded-xl overflow-hidden">
+            <OptimizedImage
+              src={project.screenshots[currentImageIndex]}
+              alt={`Screenshot ${currentImageIndex + 1}`}
+              fill
+              sizes="(max-width: 768px) 100vw, 80vw"
+              className="object-contain cursor-zoom-in hover:scale-105 transition-transform"
+              quality={80}
+              priority={currentImageIndex === 0}
+              onLoad={() => {}}
+            />
+            {project.screenshots.length > 1 && (<>
+              <button onClick={(e) => { e.stopPropagation(); prev(); }} className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-black/50 text-white hover:bg-opacity-80 transition-all"><Icons.ChevronLeft /></button>
+              <button onClick={(e) => { e.stopPropagation(); next(); }} className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-black/50 text-white hover:bg-opacity-80 transition-all"><Icons.ChevronRight /></button>
+            </>)}
+          </div>
+          <p className={`text-center mt-3 text-sm ${theme === "light" ? "text-gray-500" : "text-gray-400"}`}>{currentImageIndex + 1} / {project.screenshots.length} ({t.clickZoom})</p>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// Zoom Modal - Optimized
+function ZoomModal({ image, onClose, theme }: { image: string; onClose: () => void; theme: "light" | "dark" }) {
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-black/98 flex items-center justify-center p-4 cursor-zoom-out" onClick={onClose}>
+      <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }} className="relative max-w-[90vw] max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+        <OptimizedImage
+          src={image}
+          alt="Zoomed"
+          fill
+          sizes="90vw"
+          className="object-contain rounded-2xl"
+          quality={90}
+          priority
+        />
+        <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/50 text-white hover:bg-black/70 transition-all"><Icons.X /></button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 export default function Home() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -726,7 +922,18 @@ export default function Home() {
       descriptionAr: "قيادة نادي علوم الحاسوب. نظمت هاكاثون BrainHack.",
       descriptionFr: "Direction du club informatique. Organisation du Hackathon BrainHack.",
       skills: ["Leadership", "Organization", "Management"]
-    }
+    },
+    {
+    titleEn: "Internship at Air Algérie",
+    titleAr: "تدريب في الخطوط الجوية الجزائرية",
+    titleFr: "Stage à Air Algérie",
+    date: "2026",
+    icon: <Icons.Briefcase />,
+    descriptionEn: "Valuable experience in the aviation industry, working on digital transformation initiatives.",
+    descriptionAr: "خبرة قيمة في صناعة الطيران، العمل على مبادرات التحول الرقمي.",
+    descriptionFr: "Expérience précieuse dans l'industrie aéronautique, travaillant sur des initiatives de transformation numérique.",
+    skills: ["Digital Transformation", "Aviation Industry", "Enterprise Systems"]
+  }
   ];
 
   const getAchievementTitle = (ach: any) => {
@@ -758,172 +965,171 @@ export default function Home() {
         </div>
       </div>
 
-{/* Premium Glass Navbar - Centered with conditional theme */}
-<motion.nav 
-  initial={{ y: -100, opacity: 0 }}
-  animate={{ y: 0, opacity: 1 }}
-  transition={{ duration: 0.5 }}
-  className={`fixed top-6 left-1/2 transform -translate-x-1/2 w-[calc(100%-2rem)] max-w-[1200px] z-50 px-4 md:px-6 py-3 backdrop-blur-xl border shadow-lg rounded-2xl ${
-    theme === "light" 
-      ? "bg-white/30 border-gray-200" 
-      : "bg-black/30 border-white/10"
-  }`}
->
-  <div className="flex items-center justify-between gap-2">
-    <motion.span 
-      whileHover={{ scale: 1.05 }}
-      className={`text-xl md:text-2xl font-bold bg-gradient-to-r ${theme === "light" ? "from-[#62517B] to-[#8B7BA8]" : "from-[#ECFAD0] to-[#b8d490]"} bg-clip-text text-transparent`}
-    >
-      KM.
-    </motion.span>
-    
-    {/* Desktop Navigation */}
-    <div className="hidden md:flex gap-6 lg:gap-8">
-      {t.nav.map((item, idx) => (
-        <motion.a
-          key={item}
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: idx * 0.1 }}
-          href={`#${item.toLowerCase() === "home" ? "home" : item.toLowerCase() === "skills" ? "skills" : item.toLowerCase() === "achievements" ? "achievements" : item.toLowerCase() === "projects" ? "projects" : "contact"}`} 
-          className={`text-sm font-medium transition-all duration-300 relative group ${theme === "light" ? "text-gray-700" : "text-gray-200"}`}
-        >
-          {item}
-          <span className={`absolute -bottom-1 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full rounded-full ${theme === "light" ? "bg-[#62517B]" : "bg-[#ECFAD0]"}`} />
-        </motion.a>
-      ))}
-    </div>
+      {/* Premium Glass Navbar */}
+      <motion.nav 
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        className={`fixed top-6 left-1/2 transform -translate-x-1/2 w-[calc(100%-2rem)] max-w-[1200px] z-50 px-4 md:px-6 py-3 backdrop-blur-xl border shadow-lg rounded-2xl ${
+          theme === "light" 
+            ? "bg-white/30 border-gray-200" 
+            : "bg-black/30 border-white/10"
+        }`}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <motion.span 
+            whileHover={{ scale: 1.05 }}
+            className={`text-xl md:text-2xl font-bold bg-gradient-to-r ${theme === "light" ? "from-[#62517B] to-[#8B7BA8]" : "from-[#ECFAD0] to-[#b8d490]"} bg-clip-text text-transparent`}
+          >
+            KM.
+          </motion.span>
+          
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex gap-6 lg:gap-8">
+            {t.nav.map((item, idx) => (
+              <motion.a
+                key={item}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                href={`#${item.toLowerCase() === "home" ? "home" : item.toLowerCase() === "skills" ? "skills" : item.toLowerCase() === "achievements" ? "achievements" : item.toLowerCase() === "projects" ? "projects" : "contact"}`} 
+                className={`text-sm font-medium transition-all duration-300 relative group ${theme === "light" ? "text-gray-700" : "text-gray-200"}`}
+              >
+                {item}
+                <span className={`absolute -bottom-1 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full rounded-full ${theme === "light" ? "bg-[#62517B]" : "bg-[#ECFAD0]"}`} />
+              </motion.a>
+            ))}
+          </div>
 
-    {/* Right side controls - Always visible on mobile and desktop */}
-    <div className="flex items-center gap-2">
-      {/* Language Selector */}
-      <div className="relative">
-        <button 
-          onClick={() => setShowLangMenu(!showLangMenu)} 
-          className={`p-2 rounded-xl backdrop-blur-lg border transition-all duration-300 hover:scale-105 ${
-            theme === "light" 
-              ? "bg-gray-100/80 border-gray-200 text-gray-700" 
-              : "bg-white/10 border-white/20 text-gray-300"
-          }`}
-        >
-          <Icons.Globe />
-        </button>
-        <AnimatePresence>
-          {showLangMenu && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className={`absolute top-full mt-2 right-0 rounded-xl shadow-2xl overflow-hidden z-50 border backdrop-blur-xl min-w-[120px] ${
+          {/* Right side controls */}
+          <div className="flex items-center gap-2">
+            {/* Language Selector */}
+            <div className="relative">
+              <button 
+                onClick={() => setShowLangMenu(!showLangMenu)} 
+                className={`p-2 rounded-xl backdrop-blur-lg border transition-all duration-300 hover:scale-105 ${
+                  theme === "light" 
+                    ? "bg-gray-100/80 border-gray-200 text-gray-700" 
+                    : "bg-white/10 border-white/20 text-gray-300"
+                }`}
+              >
+                <Icons.Globe />
+              </button>
+              <AnimatePresence>
+                {showLangMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className={`absolute top-full mt-2 right-0 rounded-xl shadow-2xl overflow-hidden z-50 border backdrop-blur-xl min-w-[120px] ${
+                      theme === "light" 
+                        ? "bg-white/95 border-gray-200" 
+                        : "bg-gray-900/95 border-gray-700"
+                    }`}
+                  >
+                    {["en", "ar", "fr"].map((lang) => (
+                      <button 
+                        key={lang} 
+                        onClick={() => { setLanguage(lang as Language); setShowLangMenu(false); }}
+                        className={`block w-full px-4 py-2 text-sm text-left transition-all duration-300 ${
+                          language === lang 
+                            ? (theme === "light" ? "bg-[#62517B] text-white" : "bg-[#ECFAD0] text-gray-900")
+                            : (theme === "light" ? "text-gray-700 hover:bg-gray-100" : "text-gray-300 hover:bg-gray-800")
+                        }`}
+                      >
+                        {lang === "en" ? "English" : lang === "ar" ? "العربية" : "Français"}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            
+            {/* Theme Toggle */}
+            <button 
+              onClick={toggleTheme} 
+              className={`p-2 rounded-xl backdrop-blur-lg border transition-all duration-300 hover:scale-105 ${
                 theme === "light" 
-                  ? "bg-white/95 border-gray-200" 
-                  : "bg-gray-900/95 border-gray-700"
+                  ? "bg-gray-100/80 border-gray-200 text-gray-700" 
+                  : "bg-white/10 border-white/20 text-gray-300"
               }`}
             >
-              {["en", "ar", "fr"].map((lang) => (
-                <button 
-                  key={lang} 
-                  onClick={() => { setLanguage(lang as Language); setShowLangMenu(false); }}
-                  className={`block w-full px-4 py-2 text-sm text-left transition-all duration-300 ${
-                    language === lang 
-                      ? (theme === "light" ? "bg-[#62517B] text-white" : "bg-[#ECFAD0] text-gray-900")
-                      : (theme === "light" ? "text-gray-700 hover:bg-gray-100" : "text-gray-300 hover:bg-gray-800")
+              {theme === "dark" ? <Icons.Sun /> : <Icons.Moon />}
+            </button>
+
+            {/* Contact Button */}
+            <motion.a
+              whileHover={{ scale: 1.05 }}
+              href="#contact" 
+              className={`hidden md:block px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg ${
+                theme === "light" 
+                  ? "bg-gradient-to-r from-[#62517B] to-[#8B7BA8] text-white" 
+                  : "bg-gradient-to-r from-[#ECFAD0] to-[#b8d490] text-gray-900"
+              }`}
+            >
+              {t.contactBtn}
+            </motion.a>
+            
+            {/* Mobile Menu Button */}
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+              className={`md:hidden p-2 rounded-xl backdrop-blur-lg border transition-all duration-300 ${
+                theme === "light" 
+                  ? "bg-gray-100/80 border-gray-200 text-gray-700" 
+                  : "bg-white/10 border-white/20 text-gray-300"
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Menu */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className={`md:hidden mt-4 pt-4 border-t ${
+                theme === "light" ? "border-gray-200" : "border-white/20"
+              }`}
+            >
+              <div className="flex flex-col gap-3">
+                {t.nav.map((item) => (
+                  <a 
+                    key={item} 
+                    href={`#${item.toLowerCase() === "home" ? "home" : item.toLowerCase() === "skills" ? "skills" : item.toLowerCase() === "achievements" ? "achievements" : item.toLowerCase() === "projects" ? "projects" : "contact"}`} 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`text-sm font-medium py-2 px-2 rounded-lg transition-colors ${
+                      theme === "light" ? "text-gray-700 hover:text-[#62517B] hover:bg-gray-100" : "text-gray-300 hover:text-[#ECFAD0] hover:bg-gray-800"
+                    }`}
+                  >
+                    {item}
+                  </a>
+                ))}
+                <a 
+                  href="#contact" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`mt-2 px-4 py-2 rounded-xl text-sm font-medium text-center transition-all ${
+                    theme === "light" 
+                      ? "bg-gradient-to-r from-[#62517B] to-[#8B7BA8] text-white" 
+                      : "bg-gradient-to-r from-[#ECFAD0] to-[#b8d490] text-gray-900"
                   }`}
                 >
-                  {lang === "en" ? "English" : lang === "ar" ? "العربية" : "Français"}
-                </button>
-              ))}
+                  {t.contactBtn}
+                </a>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
-      
-      {/* Theme Toggle */}
-      <button 
-        onClick={toggleTheme} 
-        className={`p-2 rounded-xl backdrop-blur-lg border transition-all duration-300 hover:scale-105 ${
-          theme === "light" 
-            ? "bg-gray-100/80 border-gray-200 text-gray-700" 
-            : "bg-white/10 border-white/20 text-gray-300"
-        }`}
-      >
-        {theme === "dark" ? <Icons.Sun /> : <Icons.Moon />}
-      </button>
-
-      {/* Contact Button - Hidden on mobile (shown in mobile menu) */}
-      <motion.a
-        whileHover={{ scale: 1.05 }}
-        href="#contact" 
-        className={`hidden md:block px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg ${
-          theme === "light" 
-            ? "bg-gradient-to-r from-[#62517B] to-[#8B7BA8] text-white" 
-            : "bg-gradient-to-r from-[#ECFAD0] to-[#b8d490] text-gray-900"
-        }`}
-      >
-        {t.contactBtn}
-      </motion.a>
-      
-      {/* Mobile Menu Button */}
-      <button 
-        onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
-        className={`md:hidden p-2 rounded-xl backdrop-blur-lg border transition-all duration-300 ${
-          theme === "light" 
-            ? "bg-gray-100/80 border-gray-200 text-gray-700" 
-            : "bg-white/10 border-white/20 text-gray-300"
-        }`}
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          {mobileMenuOpen ? (
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          ) : (
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          )}
-        </svg>
-      </button>
-    </div>
-  </div>
-
-  {/* Mobile Menu - Only contains navigation links and contact button */}
-  <AnimatePresence>
-    {mobileMenuOpen && (
-      <motion.div
-        initial={{ opacity: 0, height: 0 }}
-        animate={{ opacity: 1, height: "auto" }}
-        exit={{ opacity: 0, height: 0 }}
-        className={`md:hidden mt-4 pt-4 border-t ${
-          theme === "light" ? "border-gray-200" : "border-white/20"
-        }`}
-      >
-        <div className="flex flex-col gap-3">
-          {t.nav.map((item) => (
-            <a 
-              key={item} 
-              href={`#${item.toLowerCase() === "home" ? "home" : item.toLowerCase() === "skills" ? "skills" : item.toLowerCase() === "achievements" ? "achievements" : item.toLowerCase() === "projects" ? "projects" : "contact"}`} 
-              onClick={() => setMobileMenuOpen(false)}
-              className={`text-sm font-medium py-2 px-2 rounded-lg transition-colors ${
-                theme === "light" ? "text-gray-700 hover:text-[#62517B] hover:bg-gray-100" : "text-gray-300 hover:text-[#ECFAD0] hover:bg-gray-800"
-              }`}
-            >
-              {item}
-            </a>
-          ))}
-          {/* Contact button in mobile menu */}
-          <a 
-            href="#contact" 
-            onClick={() => setMobileMenuOpen(false)}
-            className={`mt-2 px-4 py-2 rounded-xl text-sm font-medium text-center transition-all ${
-              theme === "light" 
-                ? "bg-gradient-to-r from-[#62517B] to-[#8B7BA8] text-white" 
-                : "bg-gradient-to-r from-[#ECFAD0] to-[#b8d490] text-gray-900"
-            }`}
-          >
-            {t.contactBtn}
-          </a>
-        </div>
-      </motion.div>
-    )}
-  </AnimatePresence>
-</motion.nav>
+      </motion.nav>
 
       {/* Hero Section */}
       <motion.section id="home" style={{ y: heroY }} className="relative z-10 min-h-screen flex items-center px-6 md:px-12 pt-28 pb-12">
@@ -960,133 +1166,148 @@ export default function Home() {
               <div className="relative w-full max-w-md">
                 <div className="absolute inset-0 bg-gradient-radial from-[#62517B]/20 to-transparent rounded-full blur-3xl" />
                 <div className="relative glass-card rounded-2xl p-2 overflow-hidden border border-gray-200/50 dark:border-white/10">
-                  <div className="relative aspect-[4/5] rounded-xl overflow-hidden">
-                    <img src="/karimaPic.jpg" alt="Karima Mansour" className="w-full h-full object-cover" />
+                  <div className="relative aspect-[4/5] rounded-xl overflow-hidden bg-gray-800">
+                    <OptimizedImage
+                      src="/karimaPic.jpg"
+                      alt="Karima Mansour"
+                      fill
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      className="object-cover"
+                      priority
+                      quality={80}
+                    />
                   </div>
                 </div>
-
               </div>
             </div>
           </div>
         </div>
       </motion.section>
 
-   {/* What I Do Section - Beautiful Premium Design */}
-<section className="relative z-10 py-20 px-6 md:px-12">
-  <div className="max-w-7xl mx-auto">
-    <div className="text-center mb-12">
-      <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4 text-xs font-medium border ${theme === "light" ? "border-[#62517B]/30 bg-[#62517B]/10 text-[#62517B]" : "border-[#ECFAD0]/30 bg-[#ECFAD0]/10 text-[#ECFAD0]"}`}>
-        <Icons.Rocket /> {t.whatIDo}
-      </div>
-      <h2 className={`text-4xl md:text-5xl font-bold mb-3 ${theme === "light" ? "text-[#62517B]" : "text-[#ECFAD0]"}`}>{t.whatIDo}</h2>
-      <div className={`w-20 h-1 ${theme === "light" ? "bg-[#62517B]" : "bg-[#ECFAD0]"}`} style={{ margin: "0 auto", borderRadius: "999px" }} />
-    </div>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-      <div className={`group rounded-2xl p-8 text-center transition-all duration-500 hover:-translate-y-3 hover:shadow-2xl border ${theme === "light" ? "bg-white/80 border-gray-200 shadow-xl hover:shadow-[#62517B]/20" : "bg-gray-800/50 border-gray-700 hover:shadow-[#ECFAD0]/10"} backdrop-blur-sm`}>
-        <div className={`flex items-center justify-center mx-auto mb-6 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 ${theme === "light" ? "text-[#62517B]" : "text-[#ECFAD0]"}`}>
-          <Icons.Code />
-        </div>
-        <h3 className={`text-xl font-bold mb-3 ${theme === "light" ? "text-gray-800" : "text-white"}`}>{t.fullStack}</h3>
-        <p className={`text-sm leading-relaxed ${theme === "light" ? "text-gray-600" : "text-gray-400"}`}>{t.fullStackDesc}</p>
-        <div className={`mt-6 w-12 h-0.5 mx-auto rounded-full transition-all duration-300 group-hover:w-24 ${theme === "light" ? "bg-[#62517B]" : "bg-[#ECFAD0]"}`} />
-      </div>
-      <div className={`group rounded-2xl p-8 text-center transition-all duration-500 hover:-translate-y-3 hover:shadow-2xl border ${theme === "light" ? "bg-white/80 border-gray-200 shadow-xl hover:shadow-[#62517B]/20" : "bg-gray-800/50 border-gray-700 hover:shadow-[#ECFAD0]/10"} backdrop-blur-sm`}>
-        <div className={`flex items-center justify-center mx-auto mb-6 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 ${theme === "light" ? "text-[#62517B]" : "text-[#ECFAD0]"}`}>
-          <Icons.Palette />
-        </div>
-        <h3 className={`text-xl font-bold mb-3 ${theme === "light" ? "text-gray-800" : "text-white"}`}>{t.uiux}</h3>
-        <p className={`text-sm leading-relaxed ${theme === "light" ? "text-gray-600" : "text-gray-400"}`}>{t.uiuxDesc}</p>
-        <div className={`mt-6 w-12 h-0.5 mx-auto rounded-full transition-all duration-300 group-hover:w-24 ${theme === "light" ? "bg-[#62517B]" : "bg-[#ECFAD0]"}`} />
-      </div>
-      <div className={`group rounded-2xl p-8 text-center transition-all duration-500 hover:-translate-y-3 hover:shadow-2xl border ${theme === "light" ? "bg-white/80 border-gray-200 shadow-xl hover:shadow-[#62517B]/20" : "bg-gray-800/50 border-gray-700 hover:shadow-[#ECFAD0]/10"} backdrop-blur-sm`}>
-        <div className={`flex items-center justify-center mx-auto mb-6 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 ${theme === "light" ? "text-[#62517B]" : "text-[#ECFAD0]"}`}>
-          <Icons.Architecture />
-        </div>
-        <h3 className={`text-xl font-bold mb-3 ${theme === "light" ? "text-gray-800" : "text-white"}`}>{t.systemArch}</h3>
-        <p className={`text-sm leading-relaxed ${theme === "light" ? "text-gray-600" : "text-gray-400"}`}>{t.systemArchDesc}</p>
-        <div className={`mt-6 w-12 h-0.5 mx-auto rounded-full transition-all duration-300 group-hover:w-24 ${theme === "light" ? "bg-[#62517B]" : "bg-[#ECFAD0]"}`} />
-      </div>
-    </div>
-  </div>
-</section>
-
-{/* Skills Section */}
-<section id="skills" className="relative z-10 py-20 overflow-hidden">
-  <div className="text-center mb-10">
-    <h2 className={`text-4xl md:text-5xl font-bold mb-3 ${theme === "light" ? "text-[#62517B]" : "text-[#ECFAD0]"}`}>{t.skillsTitle}</h2>
-    <div className={`w-16 h-0.5 ${theme === "light" ? "bg-[#62517B]" : "bg-[#ECFAD0]"}`} style={{ margin: "0 auto", borderRadius: "999px" }} />
-    <p className={`mt-3 text-sm ${theme === "light" ? "text-gray-500" : "text-gray-400"}`}>{t.skillsSub}</p>
-  </div>
-  <div className="relative overflow-hidden py-6">
-    <div className="animate-marquee flex gap-3 w-max">
-      {[...ALL_SKILLS, ...ALL_SKILLS].map((skill, i) => (
-        <span 
-          key={i} 
-          className="px-6 py-3 rounded-full text-sm font-medium whitespace-nowrap shadow-lg transition-all cursor-default hover:scale-105"
-          style={{ 
-            backgroundColor: theme === "dark" ? "#ECFAD0" : "#62517B",
-            color: theme === "dark" ? "#1a1a2e" : "white" 
-          }}
-        >
-          {skill}
-        </span>
-      ))}
-    </div>
-  </div>
-</section>
-
-<section id="achievements" className="relative z-10 py-20 px-6 md:px-12">
-  <div className="max-w-7xl mx-auto">
-    <div className="text-center mb-12">
-      <h2 className={`text-4xl md:text-5xl font-bold mb-3 ${theme === "light" ? "text-[#62517B]" : "text-[#ECFAD0]"}`}>{t.achievementsTitle}</h2>
-      <div className={`w-16 h-0.5 ${theme === "light" ? "bg-[#62517B]" : "bg-[#ECFAD0]"}`} style={{ margin: "0 auto", borderRadius: "999px" }} />
-      <p className={`max-w-2xl mx-auto mt-4 ${theme === "light" ? "text-gray-500" : "text-gray-400"}`}>{t.achievementsSub}</p>
-    </div>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {achievements.map((ach, idx) => (
-        <div key={idx} className={`group rounded-2xl p-6 transition-all duration-500 hover:-translate-y-2 border ${theme === "light" ? "bg-white/80 border-gray-200 shadow-lg hover:shadow-[#62517B]/20" : "bg-gray-800/50 border-gray-700 hover:shadow-[#ECFAD0]/10"} backdrop-blur-sm`} style={{ animationDelay: `${idx * 0.1}s` }}>
-          <div className={`flex items-start gap-4 ${language === "ar" ? "flex-row-reverse" : ""}`}>
-            {/* Icon box with inline style for guaranteed color change */}
-            <div 
-              className="w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:rotate-6"
-              style={{
-                backgroundColor: theme === "light" ? "#62517B" : "#ECFAD0",
-                color: theme === "light" ? "white" : "#1a1a1a"
-              }}
-            >
-              {ach.icon}
+      {/* What I Do Section */}
+      <section className="relative z-10 py-20 px-6 md:px-12">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4 text-xs font-medium border ${theme === "light" ? "border-[#62517B]/30 bg-[#62517B]/10 text-[#62517B]" : "border-[#ECFAD0]/30 bg-[#ECFAD0]/10 text-[#ECFAD0]"}`}>
+              <Icons.Rocket /> {t.whatIDo}
             </div>
-            <div className="flex-1">
-              <div className={`flex items-center justify-between flex-wrap gap-2 mb-2 ${language === "ar" ? "flex-row-reverse" : ""}`}>
-                <h3 className={`text-lg font-bold ${theme === "light" ? "text-gray-800" : "text-white"}`}>{getAchievementTitle(ach)}</h3>
-                <span className={`text-xs flex items-center gap-1 ${theme === "light" ? "text-gray-500" : "text-gray-400"}`}><Icons.Calendar /> {ach.date}</span>
+            <h2 className={`text-4xl md:text-5xl font-bold mb-3 ${theme === "light" ? "text-[#62517B]" : "text-[#ECFAD0]"}`}>{t.whatIDo}</h2>
+            <div className={`w-20 h-1 ${theme === "light" ? "bg-[#62517B]" : "bg-[#ECFAD0]"}`} style={{ margin: "0 auto", borderRadius: "999px" }} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className={`group rounded-2xl p-8 text-center transition-all duration-500 hover:-translate-y-3 hover:shadow-2xl border ${theme === "light" ? "bg-white/80 border-gray-200 shadow-xl hover:shadow-[#62517B]/20" : "bg-gray-800/50 border-gray-700 hover:shadow-[#ECFAD0]/10"} backdrop-blur-sm`}>
+              <div className={`flex items-center justify-center mx-auto mb-6 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 ${theme === "light" ? "text-[#62517B]" : "text-[#ECFAD0]"}`}>
+                <Icons.Code />
               </div>
-              <p className={`text-sm leading-relaxed mb-3 ${theme === "light" ? "text-gray-600" : "text-gray-400"}`}>{getAchievementDesc(ach)}</p>
-              <div className="flex flex-wrap gap-2">{ach.skills.map((s) => (<span key={s} className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${theme === "light" ? "bg-[#62517B]/10 border-[#62517B]/20 text-[#62517B]" : "bg-[#ECFAD0]/10 border-[#ECFAD0]/20 text-[#ECFAD0]"}`}>{s}</span>))}</div>
+              <h3 className={`text-xl font-bold mb-3 ${theme === "light" ? "text-gray-800" : "text-white"}`}>{t.fullStack}</h3>
+              <p className={`text-sm leading-relaxed ${theme === "light" ? "text-gray-600" : "text-gray-400"}`}>{t.fullStackDesc}</p>
+              <div className={`mt-6 w-12 h-0.5 mx-auto rounded-full transition-all duration-300 group-hover:w-24 ${theme === "light" ? "bg-[#62517B]" : "bg-[#ECFAD0]"}`} />
+            </div>
+            <div className={`group rounded-2xl p-8 text-center transition-all duration-500 hover:-translate-y-3 hover:shadow-2xl border ${theme === "light" ? "bg-white/80 border-gray-200 shadow-xl hover:shadow-[#62517B]/20" : "bg-gray-800/50 border-gray-700 hover:shadow-[#ECFAD0]/10"} backdrop-blur-sm`}>
+              <div className={`flex items-center justify-center mx-auto mb-6 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 ${theme === "light" ? "text-[#62517B]" : "text-[#ECFAD0]"}`}>
+                <Icons.Palette />
+              </div>
+              <h3 className={`text-xl font-bold mb-3 ${theme === "light" ? "text-gray-800" : "text-white"}`}>{t.uiux}</h3>
+              <p className={`text-sm leading-relaxed ${theme === "light" ? "text-gray-600" : "text-gray-400"}`}>{t.uiuxDesc}</p>
+              <div className={`mt-6 w-12 h-0.5 mx-auto rounded-full transition-all duration-300 group-hover:w-24 ${theme === "light" ? "bg-[#62517B]" : "bg-[#ECFAD0]"}`} />
+            </div>
+            <div className={`group rounded-2xl p-8 text-center transition-all duration-500 hover:-translate-y-3 hover:shadow-2xl border ${theme === "light" ? "bg-white/80 border-gray-200 shadow-xl hover:shadow-[#62517B]/20" : "bg-gray-800/50 border-gray-700 hover:shadow-[#ECFAD0]/10"} backdrop-blur-sm`}>
+              <div className={`flex items-center justify-center mx-auto mb-6 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 ${theme === "light" ? "text-[#62517B]" : "text-[#ECFAD0]"}`}>
+                <Icons.Architecture />
+              </div>
+              <h3 className={`text-xl font-bold mb-3 ${theme === "light" ? "text-gray-800" : "text-white"}`}>{t.systemArch}</h3>
+              <p className={`text-sm leading-relaxed ${theme === "light" ? "text-gray-600" : "text-gray-400"}`}>{t.systemArchDesc}</p>
+              <div className={`mt-6 w-12 h-0.5 mx-auto rounded-full transition-all duration-300 group-hover:w-24 ${theme === "light" ? "bg-[#62517B]" : "bg-[#ECFAD0]"}`} />
             </div>
           </div>
         </div>
-      ))}
-    </div>
-    <div className={`mt-6 rounded-2xl p-6 text-center transition-all duration-500 border ${theme === "light" ? "bg-white/80 border-gray-200 shadow-lg" : "bg-gray-800/50 border-gray-700"} backdrop-blur-sm`}>
-      <div className="flex items-center justify-center gap-4 flex-wrap">
-        <div 
-          className="w-12 h-12 rounded-xl flex items-center justify-center"
-          style={{
-            backgroundColor: theme === "light" ? "#62517B" : "#ECFAD0",
-            color: theme === "light" ? "white" : "#1a1a1a"
-          }}
-        >
-          <Icons.Briefcase />
+      </section>
+
+      {/* Skills Section */}
+      <section id="skills" className="relative z-10 py-20 overflow-hidden">
+        <div className="text-center mb-10">
+          <h2 className={`text-4xl md:text-5xl font-bold mb-3 ${theme === "light" ? "text-[#62517B]" : "text-[#ECFAD0]"}`}>{t.skillsTitle}</h2>
+          <div className={`w-16 h-0.5 ${theme === "light" ? "bg-[#62517B]" : "bg-[#ECFAD0]"}`} style={{ margin: "0 auto", borderRadius: "999px" }} />
+          <p className={`mt-3 text-sm ${theme === "light" ? "text-gray-500" : "text-gray-400"}`}>{t.skillsSub}</p>
         </div>
-        <div>
-          <h3 className={`text-lg font-bold ${theme === "light" ? "text-gray-800" : "text-white"}`}>Internship at Air Algérie</h3>
-          <p className={`text-sm ${theme === "light" ? "text-gray-600" : "text-gray-400"}`}>Valuable experience in the aviation industry</p>
+        <div className="relative overflow-hidden py-6">
+          <div className="animate-marquee flex gap-3 w-max">
+            {[...ALL_SKILLS, ...ALL_SKILLS].map((skill, i) => (
+              <span 
+                key={i} 
+                className="px-6 py-3 rounded-full text-sm font-medium whitespace-nowrap shadow-lg transition-all cursor-default hover:scale-105"
+                style={{ 
+                  backgroundColor: theme === "dark" ? "#ECFAD0" : "#62517B",
+                  color: theme === "dark" ? "#1a1a2e" : "white" 
+                }}
+              >
+                {skill}
+              </span>
+            ))}
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-</section>
+      </section>
+
+      {/* Achievements Section */}
+      <section id="achievements" className="relative z-10 py-20 px-6 md:px-12">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className={`text-4xl md:text-5xl font-bold mb-3 ${theme === "light" ? "text-[#62517B]" : "text-[#ECFAD0]"}`}>{t.achievementsTitle}</h2>
+            <div className={`w-16 h-0.5 ${theme === "light" ? "bg-[#62517B]" : "bg-[#ECFAD0]"}`} style={{ margin: "0 auto", borderRadius: "999px" }} />
+            <p className={`max-w-2xl mx-auto mt-4 ${theme === "light" ? "text-gray-500" : "text-gray-400"}`}>{t.achievementsSub}</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {achievements.map((ach, idx) => (
+              <motion.div 
+                key={idx} 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                className={`group rounded-2xl p-6 transition-all duration-500 hover:-translate-y-2 border ${theme === "light" ? "bg-white/80 border-gray-200 shadow-lg hover:shadow-[#62517B]/20" : "bg-gray-800/50 border-gray-700 hover:shadow-[#ECFAD0]/10"} backdrop-blur-sm`}
+              >
+                <div className={`flex items-start gap-4 ${language === "ar" ? "flex-row-reverse" : ""}`}>
+                  <div 
+                    className="w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 flex-shrink-0"
+                    style={{
+                      backgroundColor: theme === "light" ? "#62517B" : "#ECFAD0",
+                      color: theme === "light" ? "white" : "#1a1a1a"
+                    }}
+                  >
+                    {ach.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className={`flex items-center justify-between flex-wrap gap-2 mb-2 ${language === "ar" ? "flex-row-reverse" : ""}`}>
+                      <h3 className={`text-lg font-bold ${theme === "light" ? "text-gray-800" : "text-white"} break-words`}>
+                        {getAchievementTitle(ach)}
+                      </h3>
+                      <span className={`text-xs flex items-center gap-1 ${theme === "light" ? "text-gray-500" : "text-gray-400"} flex-shrink-0`}>
+                        <Icons.Calendar /> {ach.date}
+                      </span>
+                    </div>
+                    <p className={`text-sm leading-relaxed mb-3 ${theme === "light" ? "text-gray-600" : "text-gray-400"}`}>
+                      {getAchievementDesc(ach)}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {ach.skills.map((s: string) => (
+                        <span 
+                          key={s} 
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${
+                            theme === "light" 
+                              ? "bg-[#62517B]/10 border-[#62517B]/20 text-[#62517B]" 
+                              : "bg-[#ECFAD0]/10 border-[#ECFAD0]/20 text-[#ECFAD0]"
+                          }`}
+                        >
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* Projects Section */}
       <section id="projects" className="relative z-10 py-20 px-6 md:px-12">
@@ -1150,93 +1371,3 @@ export default function Home() {
     </div>
   );
 }
-
-// Project Card Component
-function ProjectCard({ project, index, onClick, theme, t, language }: any) {
-  const [hovered, setHovered] = useState(false);
-  const [rotateX, setRotateX] = useState(0);
-  const [rotateY, setRotateY] = useState(0);
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  const handleMove = (e: React.MouseEvent) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    setRotateX(((y - rect.height / 2) / (rect.height / 2)) * -8);
-    setRotateY(((x - rect.width / 2) / (rect.width / 2)) * 8);
-  };
-
-  return (
-    <div className="animate-fade-up" style={{ animationDelay: `${index * 0.05}s` }}>
-      <div
-        ref={cardRef}
-        onMouseMove={handleMove}
-        onMouseLeave={() => { setRotateX(0); setRotateY(0); setHovered(false); }}
-        onMouseEnter={() => setHovered(true)}
-        onClick={onClick}
-        className="relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 border shadow-xl"
-        style={{ 
-          transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(${hovered ? -6 : 0}px)`,
-          background: theme === "light" ? "#2D2440" : "#1a1a2e",
-          borderColor: theme === "light" ? "#4a3a6b" : "#2a2a4e",
-        }}
-      >
-        <div className="relative aspect-video overflow-hidden">
-          <img src={project.thumbnail} alt={project.title[language]} className="w-full h-full object-cover transition-transform duration-700" style={{ transform: hovered ? "scale(1.08)" : "scale(1)" }} />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 transition-opacity duration-300" style={{ opacity: hovered ? 1 : 0 }} />
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300" style={{ opacity: hovered ? 1 : 0, background: "rgba(0,0,0,0.6)" }}>
-            <span className={`px-4 py-2 rounded-xl text-sm font-semibold ${theme === "light" ? "bg-[#62517B] text-white" : "bg-[#ECFAD0] text-gray-900"}`}>{t.viewProject}</span>
-          </div>
-        </div>
-        <div className="p-4">
-          <h3 className={`font-bold text-base mb-1 line-clamp-1 text-white`}>{project.title[language]}</h3>
-          <p className={`text-xs line-clamp-2 text-gray-300`}>{project.description[language]}</p>
-          <div className="flex flex-wrap gap-1.5 mt-3">{project.techStack.slice(0, 3).map((tech: string) => (<span key={tech} className={`px-2 py-0.5 rounded-full text-[9px] font-medium border border-[#ECFAD0]/30 bg-[#ECFAD0]/10 text-[#ECFAD0]`}>{tech}</span>))}</div>
-        </div>
-        <div className={`absolute top-3 right-3 px-2 py-1 rounded-xl text-[10px] glass-card text-white ${language === "ar" ? "left-3 right-auto" : ""}`}>{project.screenshots.length} {t.shots}</div>
-      </div>
-    </div>
-  );
-}
-
-// Project Modal
-// Project Modal
-function ProjectModal({ project, onClose, currentImageIndex, setCurrentImageIndex, onZoom, theme, t, language }: any) {
-  const next = () => setCurrentImageIndex((p: number) => (p + 1) % project.screenshots.length);
-  const prev = () => setCurrentImageIndex((p: number) => (p - 1 + project.screenshots.length) % project.screenshots.length);
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-md" onClick={onClose}>
-      <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} className={`relative max-w-5xl w-full max-h-[90vh] overflow-y-auto rounded-2xl border ${theme === "light" ? "bg-white border-gray-200" : "bg-gray-900 border-gray-800"}`} onClick={(e) => e.stopPropagation()}>
-        <button onClick={onClose} className={`absolute top-4 right-4 z-10 w-8 h-8 rounded-xl transition-colors ${theme === "light" ? "bg-gray-100 text-gray-600 hover:text-[#62517B]" : "bg-gray-800 text-gray-400 hover:text-[#ECFAD0]"}`}><Icons.X /></button>
-        <div className={`p-6 border-b ${theme === "light" ? "border-gray-200" : "border-gray-800"}`}>
-          <h2 className={`text-2xl font-bold ${theme === "light" ? "text-[#62517B]" : "text-[#ECFAD0]"}`}>{project.title[language]}</h2>
-          <p className={`mt-2 text-sm leading-relaxed ${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>{project.fullDescription[language]}</p>
-          {project.myRole && (<div className={`mt-4 p-3 rounded-xl border ${theme === "light" ? "bg-[#62517B]/5 border-[#62517B]/10" : "bg-[#ECFAD0]/5 border-[#ECFAD0]/10"}`}><p className={`text-xs font-semibold mb-1 ${theme === "light" ? "text-[#62517B]" : "text-[#ECFAD0]"}`}>{t.myRole}</p><p className={`text-sm ${theme === "light" ? "text-gray-600" : "text-gray-300"}`}>{project.myRole[language]}</p></div>)}
-          <div className="flex flex-wrap gap-2 mt-4">{project.techStack.map((tech: string) => (<span key={tech} className={`px-3 py-1 rounded-full text-xs border ${theme === "light" ? "bg-[#62517B]/10 border-[#62517B]/20 text-[#62517B]" : "bg-[#ECFAD0]/10 border-[#ECFAD0]/20 text-[#ECFAD0]"}`}>{tech}</span>))}</div>
-          {project.githubUrl && (<a href={project.githubUrl} target="_blank" className={`inline-flex items-center gap-2 mt-4 text-sm ${theme === "light" ? "text-[#62517B] hover:underline" : "text-[#ECFAD0] hover:underline"}`}><Icons.Github /> GitHub</a>)}
-        </div>
-        <div className="p-6">
-          <div className="relative aspect-video bg-black/50 rounded-xl overflow-hidden">
-            <img src={project.screenshots[currentImageIndex]} alt="screenshot" className="w-full h-full object-contain cursor-zoom-in hover:scale-105 transition-transform" onClick={(e) => { e.stopPropagation(); onZoom(project.screenshots[currentImageIndex]); }} />
-            {project.screenshots.length > 1 && (<><button onClick={prev} className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-black/50 text-white hover:bg-opacity-80"><Icons.ChevronLeft /></button><button onClick={next} className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-black/50 text-white hover:bg-opacity-80"><Icons.ChevronRight /></button></>)}
-          </div>
-          <p className={`text-center mt-3 text-sm ${theme === "light" ? "text-gray-500" : "text-gray-400"}`}>{currentImageIndex + 1} / {project.screenshots.length} ({t.clickZoom})</p>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
-
-// Zoom Modal
-function ZoomModal({ image, onClose, theme }: { image: string; onClose: () => void; theme: "light" | "dark" }) {
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-black/98 flex items-center justify-center p-4 cursor-zoom-out" onClick={onClose}>
-      <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }} className="relative max-w-[90vw] max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-        <img src={image} alt="Zoomed" className="max-w-[90vw] max-h-[90vh] object-contain rounded-2xl" />
-        <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/50 text-white hover:bg-black/70 transition-all"><Icons.X /></button>
-      </motion.div>
-    </motion.div>
-  );
-}
-
